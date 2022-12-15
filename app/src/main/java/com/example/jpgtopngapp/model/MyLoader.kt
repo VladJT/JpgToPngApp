@@ -2,8 +2,9 @@ package com.example.jpgtopngapp.model
 
 import android.content.res.AssetManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
-import androidx.core.graphics.drawable.toBitmap
+import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Maybe
 import java.io.File
 import java.io.FileOutputStream
@@ -12,32 +13,40 @@ import java.io.InputStream
 import java.util.concurrent.TimeUnit
 
 
-const val DELAY = 3_000L
+const val DELAY = 0L
 
 class MyLoader {
 
-    fun loadJpgFromAsset(assetManager: AssetManager, file: String): Maybe<Drawable> =
-        Maybe.create<Drawable> { emitter ->
+    fun convertJpgToPng(
+        assetManager: AssetManager,
+        jpgFilePath: String,
+        pngFilePath: String
+    ): Maybe<Drawable> =
+        Completable.create { emitter ->
             try {
-                val ims: InputStream = assetManager.open(file)
-                val d = Drawable.createFromStream(ims, null)
-                ims.close()
-                emitter.onSuccess(d)
+                val inputStream = assetManager.open(jpgFilePath)
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+                inputStream.close()
+
+                val file = File(pngFilePath).apply { createNewFile() }
+                FileOutputStream(file).also {
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) //100-best quality
+                    it.close()
+                }
+                emitter.onComplete()
             } catch (e: IOException) {
                 emitter.onError(e)
             }
-        }.delay(DELAY, TimeUnit.MILLISECONDS)
-
-    fun convertDrawableToPng(filesDir: File, jpg: Drawable, png: String) {
-        try {
-            val f = File(filesDir, png)
-            f.createNewFile()
-            val out = FileOutputStream(f)
-            jpg.toBitmap().compress(Bitmap.CompressFormat.PNG, 100, out) //100-best quality
-            out.close()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
+        }.andThen(
+            Maybe.create<Drawable> { emitter ->
+                try {
+                    val inputStream: InputStream = assetManager.open(jpgFilePath)
+                    val drawable = Drawable.createFromStream(inputStream, null)
+                    inputStream.close()
+                    emitter.onSuccess(drawable)
+                } catch (e: IOException) {
+                    emitter.onError(e)
+                }
+            }.delay(DELAY, TimeUnit.MILLISECONDS)
+        )
 }

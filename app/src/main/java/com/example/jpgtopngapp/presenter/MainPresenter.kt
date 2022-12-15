@@ -1,6 +1,12 @@
 package com.example.jpgtopngapp.presenter
 
 import android.content.res.AssetManager
+import android.graphics.Color
+import android.graphics.Typeface
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.BackgroundColorSpan
+import android.text.style.StyleSpan
 import com.example.jpgtopngapp.model.MyLoader
 import com.example.jpgtopngapp.ui.MainView
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
@@ -9,49 +15,52 @@ import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import java.io.File
 
+const val jpgFileName = "nature.jpg"
+const val pngFileName = "nature_converted.png"
 
 class MainPresenter(private val viewState: MainView) {
 
     private val model = MyLoader()
-    private val jpg = "jpg/nature.jpg"
-    private val png = "nature_converted.png"
     private var disposable: Disposable? = null
 
 
     fun start(assetManager: AssetManager, filesDir: File) {
-        viewState.printLog("Начинаем загрузку $jpg")
+        viewState.printLog("Начинаем конвертацию $jpgFileName")
         viewState.showLoading(true)
 
-        val maybe = model.loadJpgFromAsset(assetManager, jpg)
+        val jpgFilePath = "jpg/$jpgFileName"
+        val pngFilePath = "$filesDir/$pngFileName"
 
-        disposable = maybe
-            .subscribeByDefault()
-            .subscribe(
-                { //onSuccess
-                    viewState.showImage(it)
-                    viewState.printLog("Успешно завершена загрузка $jpg")
+        disposable =
+            model.convertJpgToPng(assetManager, jpgFilePath, pngFilePath)
+                .subscribeByDefault()
+                .subscribe({ drawable ->
+                    viewState.showImage(drawable)
+                    viewState.printLog("Конвертация $jpgFileName в $pngFileName успешно завершена")
                     viewState.showLoading(false)
-                    model.convertDrawableToPng(filesDir, it, png)
-                },
-                {//onError
-                    viewState.printLog("Ошибка загрузки ${it.message}")
+                }, {
+                    viewState.printLog("✍️Ошибка конвертации: ${it.message}")
                     viewState.showLoading(false)
                 })
-
-
     }
 
 
     fun stop() {
-        disposable?.dispose()
-        viewState.printLog("Операция прервана...")
+        disposable?.let {
+            if(!it.isDisposed) {
+                it.dispose()
+                viewState.printLog("Операция прервана...", isError = true)
+            }
+        }
         viewState.showLoading(false)
     }
 
+
     private fun <T> Maybe<T>.subscribeByDefault(): Maybe<T> {
         return this.subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())// для ANDROID
+            .observeOn(AndroidSchedulers.mainThread())
     }
+
 
 
 }
