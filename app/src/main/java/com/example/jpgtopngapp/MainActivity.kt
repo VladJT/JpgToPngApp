@@ -24,8 +24,7 @@ class MainActivity : AppCompatActivity(), MainView {
             Toast.makeText(this, "RxJavaPlugins error: ${it.message}", Toast.LENGTH_LONG).show()
         }
 
-
-        binding.btnStart.setOnClickListener { presenter.start(assets) }
+        binding.btnStart.setOnClickListener { presenter.start(assets, applicationContext.filesDir) }
         binding.btnStop.setOnClickListener { presenter.stop() }
     }
 

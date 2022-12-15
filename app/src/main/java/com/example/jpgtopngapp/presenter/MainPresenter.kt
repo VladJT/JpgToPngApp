@@ -7,28 +7,31 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Maybe
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
+import java.io.File
 
 
 class MainPresenter(private val viewState: MainView) {
 
     private val model = MyLoader()
-    private val file = "jpg/nature.jpg"
+    private val jpg = "jpg/nature.jpg"
+    private val png = "nature_converted.png"
     private var disposable: Disposable? = null
 
 
-    fun start(assetManager: AssetManager) {
-        viewState.printLog("Начинаем загрузку $file")
+    fun start(assetManager: AssetManager, filesDir: File) {
+        viewState.printLog("Начинаем загрузку $jpg")
         viewState.showLoading(true)
 
-        val maybe = model.loadJpgFromAsset(assetManager, file)
+        val maybe = model.loadJpgFromAsset(assetManager, jpg)
 
         disposable = maybe
             .subscribeByDefault()
             .subscribe(
-                {//onSuccess
+                { //onSuccess
                     viewState.showImage(it)
-                    viewState.printLog("Успешно завершена загрузка $file")
+                    viewState.printLog("Успешно завершена загрузка $jpg")
                     viewState.showLoading(false)
+                    model.convertDrawableToPng(filesDir, it, png)
                 },
                 {//onError
                     viewState.printLog("Ошибка загрузки ${it.message}")
@@ -37,6 +40,7 @@ class MainPresenter(private val viewState: MainView) {
 
 
     }
+
 
     fun stop() {
         disposable?.dispose()
