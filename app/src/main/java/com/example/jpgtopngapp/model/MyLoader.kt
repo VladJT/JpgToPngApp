@@ -13,7 +13,7 @@ import java.io.InputStream
 import java.util.concurrent.TimeUnit
 
 
-const val DELAY = 0L
+const val DELAY = 500L
 
 class MyLoader {
 

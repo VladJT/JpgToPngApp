@@ -55,6 +55,11 @@ class MainPresenter(private val viewState: MainView) {
         viewState.showLoading(false)
     }
 
+    fun clear(){
+        viewState.clearImage()
+        viewState.printLog("Данные очищены")
+    }
+
 
     private fun <T> Maybe<T>.subscribeByDefault(): Maybe<T> {
         return this.subscribeOn(Schedulers.io())
