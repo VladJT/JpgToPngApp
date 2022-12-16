@@ -36,7 +36,7 @@ class MainPresenter(private val viewState: MainView) {
                 .subscribeByDefault()
                 .subscribe({ drawable ->
                     viewState.showImage(drawable)
-                    viewState.printLog("Конвертация $jpgFileName в $pngFileName успешно завершена")
+                    viewState.printLog("Конвертация $jpgFileName в $pngFilePath успешно завершена")
                     viewState.showLoading(false)
                 }, {
                     viewState.printLog("✍️Ошибка конвертации: ${it.message}")
@@ -65,7 +65,4 @@ class MainPresenter(private val viewState: MainView) {
         return this.subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
     }
-
-
-
 }
